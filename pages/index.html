@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NotesApp</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-gH2yIJqKdNHPEq0n4Mqa/HGKIhSkIHeL5AyhkYV8i59U5AR6csBvApHHNl/vI1Bx" crossorigin="anonymous">
+</head>
+
+<body class="min-vh-100" style="overflow-y: scroll;">
+  <nav class="navbar navbar-expand-lg bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">NotesApp</a>
+      <div>
+        <a href="/signup" class="px-3">
+          <button type="button" class="btn btn-dark">
+            Signup
+          </button>
+        </a>
+        <a href="/login">
+          <button type="button" class="btn btn-dark">
+            Login
+          </button>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mt-4">
+    <h1 class="text-center pb-4">Express yourself here</h1>
+    <label for="formGroupExampleInput3" class="form-label">Title</label>
+    <input type="text" class="form-control mb-4" id="title" placeholder="Title">
+    <div class="form-floating">
+      <textarea class="form-control" placeholder="Leave a comment here" id="content" style="height: 200px"></textarea>
+      <label for="content">Write notes here</label>
+    </div>
+    <button type="button" class="btn btn-dark mt-4" id="submit">Submit</button>
+
+    <div class="alert alert-success mt-4" style="display: none;" id="status" role="alert">
+      Note Added!
+    </div>
+  </div>
+
+  <div class="container mt-4 d-flex" id="notes"></div>
+
+  <div class="container">
+    <div class="alert alert-success mt-4" style="display: none;" id="pass" role="alert">Deleted</div>
+    <div class="alert alert-danger mt-4" style="display: none;" id="fail" role="alert">Some error occured</div>
+  </div>
+
+  <script>
+
+    const deleteElement = async (id) => {
+
+      let res = await fetch('/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ id: id }),
+      })
+
+      const response = await res.json()
+
+      let element;
+
+      if (response.success) {
+        element = document.getElementById("pass");
+      } else {
+        element = document.getElementById("fail");
+      }
+
+      element.style.display = "block"
+
+
+    }
+
+    const getData = async () => {
+      const email = JSON.parse(localStorage.getItem("notesappuser")).email
+      console.log(`/data?email=${email}`)
+
+      let fetchData = await fetch(`/data?email=${email}`)
+      let response = await fetchData.json()
+
+      if (response.length > 0) {
+
+        let content = "";
+
+        for (let i = 0; i < response.length; i++) {
+          let element = response[i];
+          content += `<div class="card" id=${element._id} style="width: 18rem; margin-right: 20px">
+            <div class="card-body">
+              <h5 class="card-title">${element.title}</h5>
+              <p class="card-text">${element.note}</p>
+              <btn type="button" class="btn btn-danger" onclick="document.getElementById('${element._id}').remove(); deleteElement('${element._id}')">Delete</btn>
+            </div>
+          </div>`
+        }
+
+        document.getElementById("notes").innerHTML = content;
+      } else {
+        document.getElementById("notes").innerText = "No note available"
+      }
+      console.log(response)
+    }
+
+    getData()
+
+    document.getElementById("submit").addEventListener("click", async () => {
+
+      const title = document.getElementById('title').value
+      const note = document.getElementById('content').value
+
+      let res = await fetch('/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ title: title, note: note, userEmail: JSON.parse(localStorage.getItem("notesappuser")).email }),
+      })
+
+      const response = await res.json()
+
+      let content = document.getElementById("notes").innerHTML;
+      if (content == "No note available") {
+        content = `<div class="card" id=${response._id} style="width: 18rem; margin-right: 20px">
+              <div class="card-body">
+                <h5 class="card-title">${title}</h5>
+                <p class="card-text">${note}</p>
+                <btn type="button" class="btn btn-danger" onclick="document.getElementById('${response._id}').remove(); deleteElement('${response._id}')">Delete</btn>
+              </div>
+            </div>`;
+      } else {
+        content += `<div class="card" id=${response._id} style="width: 18rem; margin-right: 20px">
+                  <div class="card-body">
+                    <h5 class="card-title">${title}</h5>
+                    <p class="card-text">${note}</p>
+                    <btn type="button" class="btn btn-danger" onclick="document.getElementById('${response._id}').remove(); deleteElement('${response._id}')">Delete</btn>
+                  </div>
+                </div>`;
+      }
+
+      document.getElementById("notes").innerHTML = content;
+      const element = document.getElementById("status");
+      element.style.display = "block";
+    });
+  </script>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.0/dist/js/bootstrap.bundle.min.js"
+    integrity="sha384-A3rJD856KowSb7dwlZdYEkO39Gagi7vIsF0jrRAoQmDKKtQBHUuLZ9AsSv4jD4Xa"
+    crossorigin="anonymous"></script>
+</body>
+
+</html>
